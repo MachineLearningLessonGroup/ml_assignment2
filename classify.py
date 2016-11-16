@@ -5,11 +5,11 @@ Generate by Python3.5
 '''
 import numpy as np
 import time
-from sklearn.cross_validation import train_test_split, cross_val_score
+from sklearn.cross_validation import train_test_split
 from sklearn.datasets.base import Bunch
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.svm import SVC
 import data_utils
+import test_utils
 
 '''
 
@@ -53,7 +53,7 @@ X, y = data_utils.dispose_data(url, str2int)
 #将数据集切分为训练集和测试集:
 train_data, test_data, train_target, test_target = train_test_split(X, y, test_size=0.3, random_state=0)
 
-# hyh 生成一个默认的数据结构,方便使用
+# 生成一个默认的数据结构,方便使用
 dataArray = np.empty((len(train_target), 6))
 for i in range(len(train_target)):
     dataArray[i] = np.asarray(train_data[i], dtype=np.float)
@@ -66,32 +66,33 @@ carSet = Bunch(data=dataArray, target=targetArray,
                feature_names=['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety'])
 
 # 设定各种参数
-max_depth = 1
-numRound = 33
+maxdepth = 3
+numRound = 10
 labels = 4
 
 # 维持一个m * k的权重分布, 共有m个样本,k种潜在label,初始化
 weightArrays = [np.ndarray] * (1 + numRound)
 weightArrays[0] = np.empty((len(carSet.data), labels))
+
 for i in range(len(carSet.data)):
-    for j in range(labels):
-        weightArrays[0][i][j] = 1.0 / (labels * len(carSet.data))
+    for l in range(labels):
+        weightArrays[0][i][l] = 1.0 / (labels * len(carSet.data))
 
 # 结果数组
 targetArray = np.empty((len(carSet.data), labels))
 for i in range(len(carSet.data)):
     k = carSet.target[i]
-    for j in range(labels):
-        targetArray[i][j] = -1
+    for l in range(labels):
+        targetArray[i][l] = -1
     targetArray[i][k] = 1
 
 clf_trees = [[DecisionTreeClassifier] * labels] * numRound
 preds = [np.ndarray] * numRound
 preds_probs = [np.ndarray] * numRound
-Z = [float]*numRound
+Z = [float] * numRound
 
 print("决策树开始训练!")
-tree_train_start=time.time()
+tree_train_start = time.time()
 
 for nr in range(numRound):
     # 每一轮训练对每一个标签训练
@@ -101,7 +102,7 @@ for nr in range(numRound):
         clf_trees[nr][l] = DecisionTreeClassifier(
             criterion='entropy',
             splitter='best',
-            max_depth=max_depth,
+            max_depth=maxdepth,
             min_samples_split=1,
             min_samples_leaf=1,
             min_weight_fraction_leaf=0.0,
@@ -134,37 +135,28 @@ for nr in range(numRound):
                 res = 1
             Z[nr] += weightArrays[nr][i][l] * (np.e ** (-1 * res * preds_probs[nr][i][l]))
 
-    print Z[nr]
-    print preds_probs[nr]
+    #print Z[nr]
+    #print preds_probs[nr]
+    #print carSet.target
     for i in range(len(carSet.data)):
         for l in range(labels):
             res = -1
             if targetArray[i][l] == preds[nr][i][l]:
                 res = 1
-            weightArrays[nr + 1][i][l] = weightArrays[nr][i][l] * (np.e ** (-1 * res * preds_probs[nr][i][l])) / Z[nr]
+            weightArrays[nr+1][i][l] = weightArrays[nr][i][l] * (np.e ** (-1 * res * preds_probs[nr][i][l])) / Z[nr]
 
+    print weightArrays[nr]
     sum = 0.0
     for i in range(len(carSet.data)):
         for l in range(labels):
             sum += weightArrays[nr + 1][i][l]
-    print sum
+    #print sum
 
 print("决策树训练结束!\n")
 
+
 print("进行预测\n")
+# 测试数据与期望目标
 
-test_pred_prob = np.ndarray((len(test_data), labels))
-
-for nr in range(numRound):
-    for l in range(labels):
-        test_pred_prob[:, l] += clf_trees[nr][l].predict_proba(test_data)[:, 1]
-print test_pred_prob
-
-test_pre = np.argmax(test_pred_prob, axis=1)
-print test_pre
-
-right = 0
-for index in range(len(test_data)):
-    if test_pre[index] == test_target[index]:
-        right += 1
-print right, len(test_data)
+print carSet.target
+test_utils.test(carSet.data, carSet.target, clf_trees, numRound, labels)

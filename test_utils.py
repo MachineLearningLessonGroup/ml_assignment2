@@ -1,0 +1,21 @@
+# -*- coding: utf-8 -*-
+import numpy as np
+
+# 测试数据与期望目标
+def test(data, target, clf_trees, numRound, labels):
+    test_pred_prob = np.ndarray((len(data), labels))
+
+    for nr in range(numRound):
+        for l in range(labels):
+            test_pred_prob[:, l] += clf_trees[nr][l].predict_proba(data)[:, 1]
+
+    print test_pred_prob
+    test_pre = np.argmax(test_pred_prob, axis=1)
+
+    print test_pre
+    right = 0
+    for index in range(len(data)):
+        if test_pre[index] == target[index]:
+            right += 1
+
+    print right, len(data)
