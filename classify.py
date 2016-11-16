@@ -132,9 +132,14 @@ for nr in range(numRound):
             Z[nr] += weightArrays[nr][i][j] * (np.e ** (-1 * preds[nr][i][l] * preds_probs[nr][i][l]))
 
     #print Z[nr]
+    print preds_probs[nr]
     for i in range(len(carSet.data)):
-        for j in range(labels):
-            weightArrays[nr+1][i][j] = weightArrays[nr][i][j] * (np.e**(-1 * preds[nr][i][l] * preds_probs[nr][i][l])) / Z[nr]
+        for l in range(labels):
+            res = -1
+            if targetArray[i][l] == preds[nr][i][l]:
+                res = 1
+            weightArrays[nr + 1][i][j] = weightArrays[nr][i][j] * (np.e ** (-1 * res * preds_probs[nr][i][l])) / Z[nr]
+
 print("决策树训练结束!\n")
 
 print("进行预测\n")
