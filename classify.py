@@ -132,16 +132,21 @@ for nr in range(numRound):
             res = -1
             if targetArray[i][l] == preds[nr][i][l]:
                 res = 1
-            Z[nr] += weightArrays[nr][i][j] * (np.e ** (-1 * res * preds_probs[nr][i][l]))
+            Z[nr] += weightArrays[nr][i][l] * (np.e ** (-1 * res * preds_probs[nr][i][l]))
 
-    #print Z[nr]
+    print Z[nr]
     print preds_probs[nr]
     for i in range(len(carSet.data)):
         for l in range(labels):
             res = -1
             if targetArray[i][l] == preds[nr][i][l]:
                 res = 1
-            weightArrays[nr + 1][i][j] = weightArrays[nr][i][j] * (np.e ** (-1 * res * preds_probs[nr][i][l])) / Z[nr]
+            weightArrays[nr + 1][i][l] = weightArrays[nr][i][l] * (np.e ** (-1 * res * preds_probs[nr][i][l])) / Z[nr]
+
+    sum = 0.0
+    for i in range(len(carSet.data)):
+        for l in range(labels):
+            sum += weightArrays[nr + 1][i][l]
 
 print("决策树训练结束!\n")
 
