@@ -147,12 +147,15 @@ for nr in range(numRound):
     for i in range(len(carSet.data)):
         for l in range(labels):
             sum += weightArrays[nr + 1][i][l]
+    print sum
 
 print("决策树训练结束!\n")
 
 print("进行预测\n")
+
 test_pred_prob = np.ndarray((len(test_data), labels))
-for i in range(numRound):
+
+for nr in range(numRound):
     for l in range(labels):
         test_pred_prob[:, l] += clf_trees[nr][l].predict_proba(test_data)[:, 1]
 print test_pred_prob
