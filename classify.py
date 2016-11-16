@@ -128,8 +128,11 @@ for nr in range(numRound):
     weightArrays[nr+1] = np.empty((len(carSet.data), labels))
     Z[nr] = 0.0
     for i in range(len(carSet.data)):
-        for j in range(labels):
-            Z[nr] += weightArrays[nr][i][j] * (np.e ** (-1 * preds[nr][i][l] * preds_probs[nr][i][l]))
+        for l in range(labels):
+            res = -1
+            if targetArray[i][l] == preds[nr][i][l]:
+                res = 1
+            Z[nr] += weightArrays[nr][i][j] * (np.e ** (-1 * res * preds_probs[nr][i][l]))
 
     #print Z[nr]
     print preds_probs[nr]
