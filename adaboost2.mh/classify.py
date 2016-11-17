@@ -3,8 +3,9 @@
 Generate by Python3.5
 
 '''
-import numpy as np
 import time
+
+import numpy as np
 from sklearn.cross_validation import train_test_split
 from sklearn.datasets.base import Bunch
 from sklearn.tree import DecisionTreeClassifier
@@ -51,7 +52,7 @@ str2int={
 X, y = data_utils.dispose_data(url, str2int)
 
 #将数据集切分为训练集和测试集:
-train_data, test_data, train_target, test_target = train_test_split(X, y, test_size=0.3, random_state=0)
+train_data, test_data, train_target, test_target = train_test_split(X, y, test_size=0.3, random_state=11)
 
 # 生成一个默认的数据结构,方便使用
 dataArray = np.empty((len(train_target), 6))
@@ -67,39 +68,27 @@ carSet = Bunch(data=dataArray, target=targetArray,
 
 # 设定各种参数
 maxdepth = 3
-numRound = 10
+numRound = 50
 labels = 4
 
 # 维持一个m * k的权重分布, 共有m个样本,k种潜在label,初始化
-weightArrays = [np.ndarray] * (1 + numRound)
-weightArrays[0] = np.empty((len(carSet.data), labels))
-
-for i in range(len(carSet.data)):
-    for l in range(labels):
-        weightArrays[0][i][l] = 1.0 / (labels * len(carSet.data))
+weightArrays = np.ones((len(carSet.data), labels)) * (1.0 / len(carSet.data) * labels)
 
 # 结果数组
-targetArray = np.empty((len(carSet.data), labels))
+targetArray = np.ones((len(carSet.data), labels)) * -1
 for i in range(len(carSet.data)):
-    k = carSet.target[i]
-    for l in range(labels):
-        targetArray[i][l] = -1
-    targetArray[i][k] = 1
-
-clf_trees = [[DecisionTreeClassifier] * labels] * numRound
-preds = [np.ndarray] * numRound
-preds_probs = [np.ndarray] * numRound
-Z = [float] * numRound
+    targetArray[i][carSet.target[i]] = 1
 
 print("决策树开始训练!")
 tree_train_start = time.time()
-
+trs = []
 for nr in range(numRound):
+    tr = []
     # 每一轮训练对每一个标签训练
-    preds[nr] = np.empty((len(carSet.data), labels))
-    preds_probs[nr] = np.empty((len(carSet.data), labels))
+    preds = np.zeros((len(carSet.data), labels))
+    preds_probs = np.zeros((len(carSet.data), labels))
     for l in range(labels):
-        clf_trees[nr][l] = DecisionTreeClassifier(
+        clf_tree = DecisionTreeClassifier(
             criterion='entropy',
             splitter='best',
             max_depth=maxdepth,
@@ -113,50 +102,29 @@ for nr in range(numRound):
             presort=False)
 
         # 训练该轮并记录数据
-        clf_trees[nr][l] = clf_trees[nr][l].fit(carSet.data, targetArray[:, l], sample_weight=weightArrays[nr][:, l])
-        preds[nr][:, l] = clf_trees[nr][l].predict(carSet.data)
-        pbs = clf_trees[nr][l].predict_proba(carSet.data)
-        #p = clf_trees[nr][l].predict(carSet.data)  # 预测结果
-        #for xx in range(100):
-        #    print ps[xx], p[xx]
+        clf_tree = clf_tree.fit(carSet.data, targetArray[:, l], sample_weight=weightArrays[:, l])
+        tr.append(clf_tree)
+        preds[:, l] = clf_tree.predict(carSet.data)
+        pbs = clf_tree.predict_proba(carSet.data)
         for index in range(len(carSet.data)):
-            if preds[nr][index, l] == -1:
-                preds_probs[nr][index, l] = pbs[index][0]
+            if preds[index, l] == -1:
+                preds_probs[index][l] = pbs[index][0]
             else:
-                preds_probs[nr][index, l] = pbs[index][1]
+                preds_probs[index][l] = pbs[index][1]
 
     # 调整数据, 准备下一轮循环
-    weightArrays[nr+1] = np.empty((len(carSet.data), labels))
-    Z[nr] = 0.0
-    for i in range(len(carSet.data)):
-        for l in range(labels):
-            res = -1
-            if targetArray[i][l] == preds[nr][i][l]:
-                res = 1
-            Z[nr] += weightArrays[nr][i][l] * (np.e ** (-1 * res * preds_probs[nr][i][l]))
-
-    #print Z[nr]
-    #print preds_probs[nr]
-    #print carSet.target
-    for i in range(len(carSet.data)):
-        for l in range(labels):
-            res = -1
-            if targetArray[i][l] == preds[nr][i][l]:
-                res = 1
-            weightArrays[nr+1][i][l] = weightArrays[nr][i][l] * (np.e ** (-1 * res * preds_probs[nr][i][l])) / Z[nr]
-
-    print weightArrays[nr]
-    sum = 0.0
-    for i in range(len(carSet.data)):
-        for l in range(labels):
-            sum += weightArrays[nr + 1][i][l]
-    #print sum
+        for i in range(len(carSet.data)):
+            sign = -1
+            if targetArray[i][l] == preds[i][l]:
+                sign = 1
+            weightArrays[i][l] = weightArrays[i][l] * np.exp(-1 * sign * preds_probs[i][l])
+        Z = np.array(weightArrays[:, l]).sum()
+        weightArrays[:,l] /= Z
+    trs .append(tr)
 
 print("决策树训练结束!\n")
 
 
 print("进行预测\n")
 # 测试数据与期望目标
-
-print carSet.target
-test_utils.test(carSet.data, carSet.target, clf_trees, numRound, labels)
+test_utils.test(test_data, test_target, trs, numRound, labels)

@@ -1,12 +1,13 @@
 #-*-coding:utf-8-*-
 # 此文件用于检查分析数据分布情况
 
-import data_utils
 import numpy as np
+
+from sklearn_ada import data_utils
 
 url="http://archive.ics.uci.edu/ml/machine-learning-databases/car/car.data"
 
-raw_data=data_utils.download(url)
+raw_data= data_utils.download(url)
 data_set=np.loadtxt(raw_data, delimiter=",", dtype=bytes).astype(str)
 attribute=data_set[:,:6]
 labels=data_set[:,6]
