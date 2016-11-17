@@ -123,7 +123,7 @@ test_len=len(test_data)
 for l in range(k):
     pred=np.zeros((test_len))
     for t in range(T):
-        pred+=tree[l][t].predict(test_data)
+        pred+=tree[l][t].predict_proba(test_data)[:,1]
     sum.append(pred)
 
 result=np.argmax(sum,axis=0)
