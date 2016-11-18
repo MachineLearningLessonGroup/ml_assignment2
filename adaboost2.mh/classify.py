@@ -11,6 +11,7 @@ from sklearn.datasets.base import Bunch
 from sklearn.tree import DecisionTreeClassifier
 import data_utils
 import test_utils
+import math
 
 '''
 
@@ -67,12 +68,12 @@ carSet = Bunch(data=dataArray, target=targetArray,
                feature_names=['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety'])
 
 # 设定各种参数
-maxdepth = 3
-numRound = 50
+maxdepth = 4
+numRound = 100
 labels = 4
 
 # 维持一个m * k的权重分布, 共有m个样本,k种潜在label,初始化
-weightArrays = np.ones((len(carSet.data), labels)) * (1.0 / len(carSet.data) * labels)
+weightArrays = np.ones((len(carSet.data), labels)) * (1.0 / (len(carSet.data) * labels))
 
 # 结果数组
 targetArray = np.ones((len(carSet.data), labels)) * -1
@@ -82,6 +83,7 @@ for i in range(len(carSet.data)):
 print("决策树开始训练!")
 tree_train_start = time.time()
 trs = []
+alphas = []
 for nr in range(numRound):
     tr = []
     # 每一轮训练对每一个标签训练
@@ -112,19 +114,30 @@ for nr in range(numRound):
             else:
                 preds_probs[index][l] = pbs[index][1]
 
-    # 调整数据, 准备下一轮循环
+    r = 0.0
+    # 调整数据, 准备下一轮循环 确定r和alpha权重
+
+    for l in range(labels):
         for i in range(len(carSet.data)):
             sign = -1
             if targetArray[i][l] == preds[i][l]:
                 sign = 1
+            r += weightArrays[i][l] * sign * preds_probs[i][l]
             weightArrays[i][l] = weightArrays[i][l] * np.exp(-1 * sign * preds_probs[i][l])
-        Z = np.array(weightArrays[:, l]).sum()
-        weightArrays[:,l] /= Z
-    trs .append(tr)
+
+
+    print r
+    rr = (1.0 + r)/ (1.0 - r)
+    print rr
+    alpha = math.log(rr)
+    Z = np.array(weightArrays).sum()
+    weightArrays /= Z
+    alphas.append(alpha)
+    trs.append(tr)
 
 print("决策树训练结束!\n")
 
 
 print("进行预测\n")
 # 测试数据与期望目标
-test_utils.test(test_data, test_target, trs, numRound, labels)
+test_utils.test(test_data, test_target, trs, alphas, numRound, labels)
