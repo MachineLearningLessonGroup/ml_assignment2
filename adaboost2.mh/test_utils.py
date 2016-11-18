@@ -6,7 +6,11 @@ import numpy as np
 
 def test(data, target, clf_trees, alphas, numRound, labels):
     test_pred_prob = np.zeros((len(data), labels))
-
+    #print alphas
+    #alphas = []
+    #for i in range(numRound):
+    #    alphas.append(1)
+    print alphas
     for nr in range(numRound):
         for l in range(labels):
             test_pred_prob[:, l] += clf_trees[nr][l].predict_proba(data)[:, 1] * alphas[nr]

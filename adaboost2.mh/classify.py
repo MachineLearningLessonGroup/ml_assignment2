@@ -126,9 +126,9 @@ for nr in range(numRound):
             weightArrays[i][l] = weightArrays[i][l] * np.exp(-1 * sign * preds_probs[i][l])
 
 
-    print r
+    # print r
     rr = (1.0 + r)/ (1.0 - r)
-    print rr
+    # print rr
     alpha = math.log(rr)
     Z = np.array(weightArrays).sum()
     weightArrays /= Z
