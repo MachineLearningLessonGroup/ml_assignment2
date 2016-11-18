@@ -1,4 +1,4 @@
-#-*-coding:utf-8-*-
+# -*-coding:utf-8-*-
 '''
 Generate by Python3.5
 
@@ -28,32 +28,32 @@ lug_boot: small, med, big.
 safety:   low, med, high.
 
 '''
-#数据链接:
-url="http://archive.ics.uci.edu/ml/machine-learning-databases/car/car.data"
+# 数据链接:
+url = "http://archive.ics.uci.edu/ml/machine-learning-databases/car/car.data"
 
-#进行数值化处理的dict:
-str2int={
-    'vhigh':4,
-    'high':3,
-    'med':2,
-    'low':1,
-    '2':2,
-    '3':3,
-    '4':4,
-    '5more':5,
-    'more':5,
-    'small':3,
-    'big':1,
-    'unacc':0,
-    'acc':1,
-    'good':2,
-    'vgood':3,
+# 进行数值化处理的dict:
+str2int = {
+    'vhigh': 4,
+    'high': 3,
+    'med': 2,
+    'low': 1,
+    '2': 2,
+    '3': 3,
+    '4': 4,
+    '5more': 5,
+    'more': 5,
+    'small': 3,
+    'big': 1,
+    'unacc': 0,
+    'acc': 1,
+    'good': 2,
+    'vgood': 3,
 }
 
 X, y = data_utils.dispose_data(url, str2int)
 
-#将数据集切分为训练集和测试集:
-train_data, test_data, train_target, test_target = train_test_split(X, y, test_size=0.3, random_state=11)
+# 将数据集切分为训练集和测试集:
+train_data, test_data, train_target, test_target = train_test_split(X, y, test_size=0.3)  # , random_state=11)
 
 # 生成一个默认的数据结构,方便使用
 dataArray = np.empty((len(train_target), 6))
@@ -114,29 +114,30 @@ for nr in range(numRound):
             else:
                 preds_probs[index][l] = pbs[index][1]
 
-    r = 0.0
     # 调整数据, 准备下一轮循环 确定r和alpha权重
-
+    r = 0.0
     for l in range(labels):
         for i in range(len(carSet.data)):
             sign = -1
             if targetArray[i][l] == preds[i][l]:
                 sign = 1
             r += weightArrays[i][l] * sign * preds_probs[i][l]
-            weightArrays[i][l] = weightArrays[i][l] * np.exp(-1 * sign * preds_probs[i][l])
-
-
-    # print r
-    rr = (1.0 + r)/ (1.0 - r)
-    # print rr
+    rr = (1.0 + r) / (1.0 - r)
     alpha = math.log(rr)
+
+    for l in range(labels):
+        for i in range(len(carSet.data)):
+            sign = -1
+            if targetArray[i][l] == preds[i][l]:
+                sign = 1
+            weightArrays[i][l] = weightArrays[i][l] * np.exp(-1 * alpha * sign * preds_probs[i][l])
+
     Z = np.array(weightArrays).sum()
     weightArrays /= Z
     alphas.append(alpha)
     trs.append(tr)
 
 print("决策树训练结束!\n")
-
 
 print("进行预测\n")
 # 测试数据与期望目标
