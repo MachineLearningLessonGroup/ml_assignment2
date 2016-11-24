@@ -80,7 +80,7 @@ for i in range(len(carSet.data)):
 			l0s.remove(l1)
 			D[i,l0s,l1] = 1.0/(3*1*len(carSet.data)/4)
 
-# 维持一个m * k的权重分布, 共有m个样本,k个对于该样本对
+# 维持一个权重分布
 weightArrays=np.zeros(len(carSet.data))
 print("决策树开始训练!")
 tree_train_start = time.time()
@@ -109,8 +109,7 @@ for nr in range(numRound):
     preds = clf_tree.predict(carSet.data)
     #print(preds)
     pbs = clf_tree.predict_proba(carSet.data)
-    #print(pbs)
-    #print('###')
+
     # 调整数据, 准备下一轮循环 确定r和alpha权重
     r = 0.0
     r=1-clf_tree.score(carSet.data, carSet.target,sample_weight=weightArrays)
