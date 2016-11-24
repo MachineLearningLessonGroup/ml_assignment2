@@ -1,7 +1,7 @@
 # -*-coding:utf-8-*-
 '''
 Generate by Python3.5
-
+This solution performs much better than adaboost_MR.py
 '''
 import time
 
